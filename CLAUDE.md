@@ -28,7 +28,7 @@ uv run --isolated --python 3.10 --with pytest pytest   # oldest supported Python
 - Apple silicon: `CurrentCapacity`/`MaxCapacity` are percentages; mAh is in `AppleRaw*Capacity`. Intel reports mAh in `CurrentCapacity`/`MaxCapacity` (handled, untested on hardware).
 - `PowerTelemetryData`: `SystemPowerIn == SystemLoad + BatteryPower` exactly. Its `BatteryPower` differs substantially from gauge `Voltage × InstantAmperage`; the Power row uses telemetry, Rate/Time use gauge current. `SystemVoltageIn`/`SystemCurrentIn` are not bus V/A (≈4 V on a 20 V contract), so they're only exposed raw in JSON.
 - The active PD contract is `AdapterDetails.UsbHvcMenu[UsbHvcHvcIndex]`.
-- Gauge values refresh every ~15–60 s (`UpdateTime`); repeated samples are expected.
+- Gauge values refresh every ~15–60 s (`UpdateTime`); repeated samples are expected. `PowerTelemetryData` refreshes on the same tick, so it is not a faster source.
 - Time fields use 65535 (and 0) for "unknown".
 
 ## Packaging constraints

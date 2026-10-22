@@ -108,6 +108,43 @@ class Status:
         remaining = self.full_mah - self.charge_mah if self.current_ma > 0 else self.charge_mah
         return 60 * remaining / abs(self.current_ma)
 
+    @property
+    def adapter_current_a(self) -> float | None:
+        """Estimated adapter bus current: telemetry input power / contract voltage.
+
+        Assumes a fixed PDO holds its voltage; ignores cable drop.
+        """
+        a, p_in = self.adapter, self.flow.adapter_in
+        if not a.connected or not a.voltage_v or p_in is None:
+            return None
+        return p_in / a.voltage_v
+
+    @property
+    def load_drain_ma(self) -> float | None:
+        """Signed battery current implied by telemetry system load on battery.
+
+        System load / pack voltage; approximate, and refreshed with the gauge.
+        """
+        if self.adapter.connected or not self.flow.system_load or not self.voltage_v:
+            return None
+        return -1000 * self.flow.system_load / self.voltage_v
+
+    @property
+    def load_rate_pct_per_hour(self) -> float | None:
+        if (ma := self.load_drain_ma) is None or not self.full_mah:
+            return None
+        return 100 * ma / self.full_mah
+
+    @property
+    def load_minutes_to_empty(self) -> float | None:
+        """Linear time to empty at the present system load and pack voltage.
+
+        Pack voltage falls as charge drops, so this over-estimates at low charge.
+        """
+        if (ma := self.load_drain_ma) is None or self.charge_mah is None:
+            return None
+        return 60 * self.charge_mah / -ma
+
     def to_dict(self) -> dict:
         d = asdict(self)
         d["flow"]["wall"] = self.flow.wall
@@ -116,6 +153,10 @@ class Status:
             "health_pct": self.health_pct,
             "rate_pct_per_hour": self.rate_pct_per_hour,
             "minutes_at_current_rate": self.minutes_at_current_rate,
+            "adapter_current_a": self.adapter_current_a,
+            "load_drain_ma": self.load_drain_ma,
+            "load_rate_pct_per_hour": self.load_rate_pct_per_hour,
+            "load_minutes_to_empty": self.load_minutes_to_empty,
         }
         return d
 

@@ -105,6 +105,17 @@ def _rate(s: Status, st: Style) -> str:
     return st.green(text) if s.current_ma > 0 else st.yellow(text)
 
 
+def _drain(s: Status, st: Style) -> str | None:
+    if (ma := s.load_drain_ma) is None:
+        return None
+    text = f"~{ma:+.0f} mA"
+    if (r := s.load_rate_pct_per_hour) is not None:
+        text += f" · {r:+.1f} %/h"
+    if (m := s.load_minutes_to_empty) is not None:
+        text += f" · {fmt_minutes(m)} to empty"
+    return text + st.dim(" (system load ÷ pack V)")
+
+
 def _time(s: Status, st: Style) -> str | None:
     if s.current_ma > 0:
         os_est, target = s.os_minutes_to_full, "to full"
@@ -125,7 +136,10 @@ def _power(s: Status, st: Style) -> str | None:
     if f.system_load is None:
         return None
     if s.adapter.connected and f.adapter_in:
-        text = f"~{f.adapter_in:.1f} W in → {f.system_load:.1f} W system"
+        text = f"~{f.adapter_in:.1f} W in"
+        if (amps := s.adapter_current_a) is not None:
+            text += st.dim(f" (~{amps:.2f} A @ {s.adapter.voltage_v:g} V)")
+        text += f" → {f.system_load:.1f} W system"
         if f.battery is not None:
             text += f", {f.battery:+.1f} W battery"
         if f.wall is not None:
@@ -160,6 +174,7 @@ def render(s: Status, st: Style) -> list[str]:
         ("PDOs", _pdos(s, st)),
         ("Status", f"{_state(s, st)}  {st.bold(f'{s.percent}%')} {_bar(s.percent, st)}"),
         ("Rate", _rate(s, st)),
+        ("Drain", _drain(s, st)),
         ("Time", _time(s, st)),
         ("Power", _power(s, st)),
         ("Battery", _battery(s, st)),
