@@ -1,0 +1,37 @@
+[project]
+name = "chargewatch"
+version = "0.1.0"
+description = "Mac power adapter, charge rate, and time-to-full/empty in the terminal"
+readme = "README.md"
+authors = [
+    { name = "TJDCS", email = "tucker@tjdcs.dev" }
+]
+requires-python = ">=3.10"
+license = "MIT"
+keywords = ["macos", "battery", "charger", "usb-pd", "power"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Hardware",
+]
+dependencies = []
+
+[project.scripts]
+chargewatch = "chargewatch:main"
+
+[project.urls]
+Repository = "https://github.com/tjdcs/chargewatch"
+
+[build-system]
+requires = ["flit_core>=3.12,<4"]
+build-backend = "flit_core.buildapi"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 100

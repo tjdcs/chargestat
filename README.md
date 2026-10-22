@@ -1,0 +1,76 @@
+# chargewatch
+
+Mac power adapter, charge rate, and time to full/empty in the terminal. Read-only, no sudo, no dependencies beyond the Python standard library.
+
+```
+Adapter  100 W · pd charger · 20.0 V × 5.00 A negotiated
+PDOs     5V 3A · 9V 3A · 15V 3A · [20V 5A]
+Status   Charging  23% █████░░░░░░░░░░░░░░░
+Rate     +476 mA · +9.0 %/h
+Time     10h 14m to full (macOS) · 8h 42m at current rate
+Power    ~14.0 W in → 8.8 W system, +5.3 W battery · ~14.9 W at wall
+Battery  1169/5312 mAh · 11.44 V · 30.6 °C
+Health   85% of design (6249 mAh) · 437 cycles
+Updated  9 s ago by battery gauge
+```
+
+## Install
+
+```sh
+brew install tjdcs/tap/chargewatch   # Homebrew
+uvx chargewatch                      # run without installing (uv)
+uv tool install chargewatch          # install with uv
+```
+
+Before the first PyPI release, run from the repository instead:
+
+```sh
+uvx --from git+https://github.com/tjdcs/chargewatch chargewatch
+```
+
+## Usage
+
+```sh
+chargewatch              # one snapshot
+chargewatch -w           # live view, refresh every 2 s (Ctrl-C to stop)
+chargewatch -w 5 -n 12   # 12 refreshes, 5 s apart
+chargewatch --json       # machine-readable; with -w, one JSON object per line
+chargewatch -H           # also list the last 5 adapter/battery switches
+```
+
+Exit status is 2 when the Mac has no battery.
+
+## What the rows mean
+
+| Row | Source (`ioreg -rn AppleSmartBattery`) | Notes |
+|---|---|---|
+| Adapter | `AdapterDetails` | Negotiated USB-PD contract, not live draw. |
+| PDOs | `AdapterDetails.UsbHvcMenu` | Fixed-supply PDOs the charger advertises; `[ ]` marks the active one. |
+| Rate | `InstantAmperage`, `AppleRawMaxCapacity` | Gauge current into (+) or out of (−) the pack, and the resulting SoC change per hour. |
+| Time | `AvgTimeToFull`/`AvgTimeToEmpty`; mAh ÷ mA | macOS's estimate, plus a linear estimate at the present current. The linear one ignores the constant-voltage taper, so it reads short near full. |
+| Power | `PowerTelemetryData` | Estimates (`~`). Input = system load + battery branch; "at wall" adds the reported adapter efficiency loss. |
+| Battery / Health | `AppleRawCurrentCapacity`, `DesignCapacity`, `CycleCount` | Health is full-charge capacity ÷ design capacity. |
+| Updated | `UpdateTime` | The gauge refreshes every ~15–60 s, so consecutive samples often repeat. |
+
+`NotChargingReason` / `SlowChargingReason` are shown as raw hex because Apple doesn't document the bits.
+
+Tested on Apple silicon. Intel Macs report capacities in mAh directly; that path is handled but untested on hardware.
+
+## Similar tools
+
+- [WhatBattery](https://github.com/darrylmorley/whatbattery) — menu bar app with a CLI; reads live power from SMC; some details require a paid tier.
+- [macbattery](https://github.com/Sora-Amagiri/macbattery) — terminal dashboard/TUI over IOKit.
+- [powermon](https://github.com/rdegges/powermon) — terminal power monitor parsing `ioreg` text.
+- [batt](https://github.com/charlie0129/batt), [battery](https://github.com/actuallymentor/battery), [Battery Toolkit](https://github.com/mhaeuser/Battery-Toolkit) — charge *control* (limits, adapter on/off) rather than monitoring.
+
+chargewatch focuses on the adapter contract (PDOs), charge rate, and time estimates in a single read-only command that is easy to script.
+
+## Development
+
+```sh
+uv run chargewatch
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+```
+
+See [RELEASING.md](RELEASING.md) for the PyPI and Homebrew release process.
