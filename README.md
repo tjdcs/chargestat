@@ -1,4 +1,4 @@
-# chargewatch
+# chargestat
 
 Mac power adapter, charge rate, and time to full/empty in the terminal. Read-only, no sudo, no dependencies beyond the Python standard library.
 
@@ -17,25 +17,25 @@ Updated  9 s ago by battery gauge
 ## Install
 
 ```sh
-brew install tjdcs/tap/chargewatch   # Homebrew
-uvx chargewatch                      # run without installing (uv)
-uv tool install chargewatch          # install with uv
+brew install tjdcs/tap/chargestat   # Homebrew
+uvx chargestat                      # run without installing (uv)
+uv tool install chargestat          # install with uv
 ```
 
 Before the first PyPI release, run from the repository instead:
 
 ```sh
-uvx --from git+https://github.com/tjdcs/chargewatch chargewatch
+uvx --from git+https://github.com/tjdcs/chargestat chargestat
 ```
 
 ## Usage
 
 ```sh
-chargewatch              # one snapshot
-chargewatch -w           # live view, refresh every 2 s (Ctrl-C to stop)
-chargewatch -w 5 -n 12   # 12 refreshes, 5 s apart
-chargewatch --json       # machine-readable; with -w, one JSON object per line
-chargewatch -H           # also list the last 5 adapter/battery switches
+chargestat              # one snapshot
+chargestat -w           # live view, refresh every 2 s (Ctrl-C to stop)
+chargestat -w 5 -n 12   # 12 refreshes, 5 s apart
+chargestat --json       # machine-readable; with -w, one JSON object per line
+chargestat -H           # also list the last 5 adapter/battery switches
 ```
 
 Exit status is 2 when the Mac has no battery.
@@ -63,12 +63,12 @@ Tested on Apple silicon. Intel Macs report capacities in mAh directly; that path
 - [powermon](https://github.com/rdegges/powermon) — terminal power monitor parsing `ioreg` text.
 - [batt](https://github.com/charlie0129/batt), [battery](https://github.com/actuallymentor/battery), [Battery Toolkit](https://github.com/mhaeuser/Battery-Toolkit) — charge *control* (limits, adapter on/off) rather than monitoring.
 
-chargewatch focuses on the adapter contract (PDOs), charge rate, and time estimates in a single read-only command that is easy to script.
+chargestat focuses on the adapter contract (PDOs), charge rate, and time estimates in a single read-only command that is easy to script.
 
 ## Development
 
 ```sh
-uv run chargewatch
+uv run chargestat
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```

@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`chargewatch` is a macOS-only, read-only CLI (Python, stdlib only) that reports power adapter contract, charge rate, power flow, and time to full/empty from the `AppleSmartBattery` IORegistry node. Distributed via PyPI (`uvx chargewatch`) and a Homebrew tap (`tjdcs/tap`); see RELEASING.md.
+`chargestat` is a macOS-only, read-only CLI (Python, stdlib only) that reports power adapter contract, charge rate, power flow, and time to full/empty from the `AppleSmartBattery` IORegistry node. Distributed via PyPI (`uvx chargestat`) and a Homebrew tap (`tjdcs/tap`); see RELEASING.md.
 
 ## Commands
 
 ```sh
-uv run chargewatch [-w [SEC]] [-n N] [--json] [-H [N]]
+uv run chargestat [-w [SEC]] [-n N] [--json] [-H [N]]
 uv run pytest                          # all tests
 uv run pytest -k discharging           # single test
 uv run ruff check . && uv run ruff format --check .
@@ -33,6 +33,6 @@ uv run --isolated --python 3.10 --with pytest pytest   # oldest supported Python
 
 ## Packaging constraints
 
-- Keep zero runtime dependencies; the Homebrew formula (`packaging/homebrew/chargewatch.rb`) has no `resource` blocks.
+- Keep zero runtime dependencies; the Homebrew formula (`packaging/homebrew/chargestat.rb`) has no `resource` blocks.
 - Build backend must stay pure Python (`flit_core`): Homebrew builds from source with `--no-binary :all:`, and `uv_build` would need Rust.
 - Version lives only in `pyproject.toml`; `__version__` reads installed metadata. The release workflow fails if the tag ≠ `v<version>`.

@@ -4,8 +4,8 @@ import subprocess
 
 import pytest
 
-from chargewatch import battery, cli
-from chargewatch.render import Style, fmt_minutes, render
+from chargestat import battery, cli
+from chargestat.render import Style, fmt_minutes, render
 
 NOW = 1_800_000_000
 

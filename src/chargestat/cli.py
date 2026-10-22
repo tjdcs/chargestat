@@ -24,7 +24,7 @@ def recent_transitions(n: int) -> list[str]:
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="chargewatch",
+        prog="chargestat",
         description="Show Mac power adapter, charge rate, and time to full/empty.",
     )
     p.add_argument(
@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
                     print()
                 time.sleep(args.watch)
     except battery.NoBatteryError as e:
-        print(f"chargewatch: {e}", file=sys.stderr)
+        print(f"chargestat: {e}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
         return 130
