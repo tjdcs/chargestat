@@ -16,17 +16,17 @@ Updated  9 s ago by battery gauge
 
 ## Install
 
-```sh
-brew install tjdcs/tap/chargestat   # Homebrew
-uvx chargestat                      # run without installing (uv)
-uv tool install chargestat          # install with uv
-```
+Requires macOS. Homebrew provides Python; with uv, any Python ≥ 3.10 works.
 
-Before the first PyPI release, run from the repository instead:
+| | Homebrew | uv | pipx |
+|---|---|---|---|
+| Install | `brew install tjdcs/tap/chargestat` | `uv tool install chargestat` | `pipx install chargestat` |
+| Upgrade | `brew upgrade chargestat` | `uv tool upgrade chargestat` | `pipx upgrade chargestat` |
+| Uninstall | `brew uninstall chargestat` | `uv tool uninstall chargestat` | `pipx uninstall chargestat` |
 
-```sh
-uvx --from git+https://github.com/tjdcs/chargestat chargestat
-```
+To try it without installing, run `uvx chargestat`. Add `--refresh` to pick up a new release.
+
+Check the installed version with `chargestat -V`. [CHANGELOG.md](CHANGELOG.md) lists CLI and install changes for each release.
 
 ## Usage
 

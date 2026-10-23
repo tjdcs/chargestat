@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`chargestat` is a macOS-only, read-only CLI (Python, stdlib only) that reports power adapter contract, charge rate, power flow, and time to full/empty from the `AppleSmartBattery` IORegistry node. Distributed via PyPI (`uvx chargestat`) and a Homebrew tap (`tjdcs/tap`); see RELEASING.md.
+`chargestat` is a macOS-only, read-only CLI (Python, stdlib only) that reports power adapter contract, charge rate, power flow, and time to full/empty from the `AppleSmartBattery` IORegistry node. Released (v0.1.0, 2026-10-23) on PyPI (`uvx chargestat`) and the Homebrew tap `tjdcs/tap` (github.com/tjdcs/homebrew-tap). See RELEASING.md and CHANGELOG.md. The project venv's `chargestat` hides the Homebrew one on PATH, so to test the Homebrew build, run `$(brew --prefix)/bin/chargestat`.
 
 ## Commands
 
