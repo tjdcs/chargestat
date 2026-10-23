@@ -2,6 +2,16 @@
 
 Each release's section becomes the body of its GitHub release. See [RELEASING.md](RELEASING.md).
 
+## v0.1.2 — 2026-10-23
+
+### CLI
+
+- Drain row (on battery): the current no longer has a `~` running into its minus sign, `~-1095 mA` → `-1095 mA`. The dim `(system load ÷ pack V)` note still marks it as derived.
+
+### Install / upgrade
+
+- None. Upgrade with `brew upgrade chargestat`, `uv tool upgrade chargestat`, or `pipx upgrade chargestat`.
+
 ## v0.1.1 — 2026-10-23
 
 ### CLI
