@@ -60,15 +60,6 @@ Exit status is 2 when the Mac has no battery.
 
 Tested on Apple silicon. Intel Macs report capacities in mAh directly; that path is handled but untested on hardware.
 
-## Similar tools
-
-- [WhatBattery](https://github.com/darrylmorley/whatbattery) — menu bar app with a CLI; reads live power from SMC; some details require a paid tier.
-- [macbattery](https://github.com/Sora-Amagiri/macbattery) — terminal dashboard/TUI over IOKit.
-- [powermon](https://github.com/rdegges/powermon) — terminal power monitor parsing `ioreg` text.
-- [batt](https://github.com/charlie0129/batt), [battery](https://github.com/actuallymentor/battery), [Battery Toolkit](https://github.com/mhaeuser/Battery-Toolkit) — charge *control* (limits, adapter on/off) rather than monitoring.
-
-chargestat focuses on the adapter contract (PDOs), charge rate, and time estimates in a single read-only command that is easy to script.
-
 ## Development
 
 ```sh
