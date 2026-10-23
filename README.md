@@ -35,6 +35,8 @@ Requires macOS. Homebrew provides Python; with uv, any Python ≥ 3.10 works.
 
 To try it without installing, run `uvx chargestat`. Add `--refresh` to pick up a new release.
 
+![uvx chargestat fetching chargestat from PyPI on first run and printing a snapshot](https://raw.githubusercontent.com/tjdcs/chargestat/main/docs/uvx.gif)
+
 Check the installed version with `chargestat -V`. [CHANGELOG.md](CHANGELOG.md) lists CLI and install changes for each release.
 
 ## Usage
