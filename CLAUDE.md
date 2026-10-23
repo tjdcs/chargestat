@@ -22,7 +22,7 @@ uv run --isolated --python 3.10 --with pytest pytest   # oldest supported Python
 - `render.py` — `render(Status, Style) -> list[str]`; each row is a small function returning `None` to omit the row. `Style` handles ANSI (respects `NO_COLOR`/`FORCE_COLOR`).
 - `history.py` — `read()` queries the system powerlog (`sqlite3`, `mode=ro`) into `Sample`s; `bins()` takes time-weighted means per x-pixel (each row holds until the next, since rows are event-driven and cluster around state changes); silences > 15 min become `None` gaps.
 - `plot.py` — stdlib braille line charts (2×4 dots per cell) for `-H`: charge %, battery power (W, gauge V × I), adapter strip, local-time axis.
-- `cli.py` — argparse, watch loop (redraws in place on a TTY by moving the cursor up the previous block's line count), `--json` (NDJSON in watch mode; a JSON array of samples with `-H`), `-H` history plots.
+- `cli.py` — `_with_average()` attaches the powerlog's recent mean discharge current to `Status` (on battery only; skipped silently if the powerlog is unreadable); argparse, watch loop (redraws in place on a TTY by moving the cursor up the previous block's line count), `--json` (NDJSON in watch mode; a JSON array of samples with `-H`), `-H` history plots.
 
 ## Data caveats (verified on M3 Pro, macOS 26)
 
@@ -32,6 +32,7 @@ uv run --isolated --python 3.10 --with pytest pytest   # oldest supported Python
 - The active PD contract is `AdapterDetails.UsbHvcMenu[UsbHvcHvcIndex]`.
 - Gauge values refresh every ~15–60 s (`UpdateTime`); repeated samples are expected. `PowerTelemetryData` refreshes on the same tick, so it is not a faster source.
 - Time fields use 65535 (and 0) for "unknown".
+- Time to empty: gauge `InstantAmperage` and telemetry `SystemLoad` are single readings, and `AvgTimeToEmpty` averages over a short, undocumented window (it moved from 376 to 99 min in ~2 min under a build). The Time row leads with remaining mAh ÷ the 15-min time-weighted mean gauge current from the powerlog, clipped to the time since unplug; macOS is shown alongside. Time to full is macOS only, because it models the constant-voltage taper.
 - History: `/private/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL` (world-readable, private schema), table `PLBatteryAgent_EventBackward_Battery`, a row every ~15 s including through sleep. The current DB holds ~2–3 days; older days are gzipped in `Archives/` (not read). `RawLevel` is the gauge % (`AppleRawCurrentCapacity/AppleRawMaxCapacity`, e.g. 97.7 while the UI `Level` shows 100). `InstantAmperage` is stored already signed. `pmset -g log` is too sparse to plot (event-driven integer %, hours-long gaps).
 
 ## Packaging constraints

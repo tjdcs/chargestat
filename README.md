@@ -7,7 +7,7 @@ Adapter  100 W · pd charger · 20.0 V × 5.00 A negotiated
 PDOs     5V 3A · 9V 3A · 15V 3A · [20V 5A]
 Status   Charging  23% █████░░░░░░░░░░░░░░░
 Rate     +476 mA · +9.0 %/h
-Time     10h 14m to full (macOS) · 8h 42m at current rate
+Time     10h 14m to full (macOS)
 Power    ~14.0 W in → 8.8 W system, +5.3 W battery · ~14.9 W at wall
 Battery  1169/5312 mAh · 11.44 V · 30.6 °C
 Health   85% of design (6249 mAh) · 437 cycles

@@ -114,24 +114,27 @@ def _drain(s: Status, st: Style) -> str | None:
     text = f"~{ma:+.0f} mA"
     if (r := s.load_rate_pct_per_hour) is not None:
         text += f" · {r:+.1f} %/h"
-    if (m := s.load_minutes_to_empty) is not None:
-        text += f" · {fmt_minutes(m)} to empty"
     return text + st.dim(" (system load ÷ pack V)")
 
 
 def _time(s: Status, st: Style) -> str | None:
+    # Charging: macOS only, since it models the constant-voltage taper and a
+    # linear estimate does not.
     if s.current_ma > 0:
         os_est, target = s.os_minutes_to_full, "to full"
     elif s.current_ma < 0:
         os_est, target = s.os_minutes_to_empty, "to empty"
     else:
         return None
-    parts = []
-    if os_est is not None:
-        parts.append(f"{st.bold(fmt_minutes(os_est))} {target} {st.dim('(macOS)')}")
-    if (lin := s.minutes_at_current_rate) is not None:
-        parts.append(f"{fmt_minutes(lin)} at current rate")
-    return " · ".join(parts) or None
+    if (m := s.minutes_to_empty_avg) is not None:
+        text = f"{st.bold(fmt_minutes(m))} to empty"
+        text += st.dim(f" ({max(1, round(s.avg_window_s / 60))}-min avg)")
+        if os_est is not None:
+            text += st.dim(f" · {fmt_minutes(os_est)} (macOS)")
+        return text
+    if os_est is None:
+        return None
+    return f"{st.bold(fmt_minutes(os_est))} {target} {st.dim('(macOS)')}"
 
 
 def _power(s: Status, st: Style) -> str | None:
