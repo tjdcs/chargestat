@@ -11,7 +11,7 @@ Enter
 Show
 
 Sleep 600ms
-Type "uvx chargestat  # no install"
+Type "uvx chargestat"
 Sleep 400ms
 Enter
 Sleep 6s
