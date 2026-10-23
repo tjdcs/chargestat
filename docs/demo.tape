@@ -25,6 +25,11 @@ Enter
 Show
 
 Sleep 600ms
+# A comment, so it shows without running brew; it stays above the snapshot.
+Type "# brew install tjdcs/tap/chargestat"
+Sleep 300ms
+Enter
+Sleep 1s
 Type "chargestat"
 Sleep 400ms
 Enter
