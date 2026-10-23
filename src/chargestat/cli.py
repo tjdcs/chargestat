@@ -4,22 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import subprocess
 import sys
 import time
+from dataclasses import asdict
 
-from . import __version__, battery
+from . import __version__, battery, history
+from .plot import render_history
 from .render import Style, color_enabled, render
-
-_TRANSITION = re.compile(r"^(\S+ \S+) .*Using (AC|Batt)\(Charge: ?(\d+)\)")
-
-
-def recent_transitions(n: int) -> list[str]:
-    """Last ``n`` AC/battery switches from the power-management log."""
-    log = subprocess.run(["pmset", "-g", "log"], check=False, capture_output=True, text=True).stdout
-    hits = [m for line in log.splitlines() if (m := _TRANSITION.match(line))]
-    return [f"{m[1]}  {'adapter' if m[2] == 'AC' else 'battery'} at {m[3]}%" for m in hits[-n:]]
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -44,10 +35,10 @@ def _parser() -> argparse.ArgumentParser:
         "-H",
         "--history",
         nargs="?",
-        type=int,
-        const=5,
-        metavar="N",
-        help="also list the last N adapter/battery switches (default 5)",
+        type=float,
+        const=24.0,
+        metavar="HOURS",
+        help="plot charge and battery power over the last HOURS (default 24) from the system powerlog",
     )
     p.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     return p
@@ -66,9 +57,31 @@ def _emit(args: argparse.Namespace, st: Style, redraw_lines: int) -> int:
     return len(lines)
 
 
+def _history(args: argparse.Namespace, st: Style) -> int:
+    end = time.time()
+    samples = history.read(args.history, now=end)
+    if args.json:
+        print(json.dumps([asdict(s) for s in samples]))
+    else:
+        print("\n".join(render_history(samples, end - 3600 * args.history, end, st)))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.history is not None:
+        if args.watch is not None:
+            parser.error("--history cannot be combined with --watch")
+        if args.history <= 0:
+            parser.error("--history HOURS must be positive")
     st = Style(color_enabled() and not args.json)
+    if args.history is not None:
+        try:
+            return _history(args, st)
+        except history.HistoryUnavailable as e:
+            print(f"chargestat: {e}", file=sys.stderr)
+            return 2
     try:
         if args.watch is None:
             _emit(args, st, 0)
@@ -88,8 +101,4 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except KeyboardInterrupt:
         return 130
-    if args.history and not args.json:
-        print()
-        for line in recent_transitions(args.history):
-            print(st.dim(line))
     return 0
