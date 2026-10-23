@@ -35,6 +35,18 @@ uv run --isolated --python 3.10 --with pytest pytest   # oldest supported Python
 - Time to empty: gauge `InstantAmperage` and telemetry `SystemLoad` are single readings, and `AvgTimeToEmpty` averages over a short, undocumented window (it moved from 376 to 99 min in ~2 min under a build). The Time row leads with remaining mAh ÷ the 15-min time-weighted mean gauge current from the powerlog, clipped to the time since unplug; macOS is shown alongside. Time to full is macOS only, because it models the constant-voltage taper.
 - History: `/private/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL` (world-readable, private schema), table `PLBatteryAgent_EventBackward_Battery`, a row every ~15 s including through sleep. The current DB holds ~2–3 days; older days are gzipped in `Archives/` (not read). `RawLevel` is the gauge % (`AppleRawCurrentCapacity/AppleRawMaxCapacity`, e.g. 97.7 while the UI `Level` shows 100). `InstantAmperage` is stored already signed. `pmset -g log` is too sparse to plot (event-driven integer %, hours-long gaps).
 
+## Release notes (required)
+
+The commit tagged `vX.Y.Z` must add a `## vX.Y.Z — YYYY-MM-DD` section at the top of `CHANGELOG.md`. `release.yml` copies that section into the GitHub release body, followed by GitHub's generated PR list. If the section is missing, the workflow fails before publishing to PyPI. Never tag a release without it.
+
+- Build the notes from `git log <prev tag>..HEAD` and `git diff <prev tag>..HEAD`. Don't work from memory or from PR titles.
+- Always include these two subsections, in this order. If nothing changed, write `None.` so readers know the section was checked:
+  - `### CLI`: every user-visible change. Cover flags and defaults, rows and output format, `--json` keys and shapes, and exit status. Show a changed default or format as `old → new`. Flag breaking changes with **Breaking:** at the start of the bullet.
+  - `### Install / upgrade`: changes to `requires-python`, dependencies, the Homebrew formula, supported macOS or hardware, or install commands. Include any manual step an upgrade needs.
+- Optional, after those two: `### Fixes`, then `### Internal`. Leave out internal-only changes unless they affect users.
+- One bullet per change, written for users. Name flags and keys in backticks. Don't use commit hashes or PR numbers, since GitHub's generated list adds those.
+- Before tagging, run the extraction locally: `awk -v v=vX.Y.Z '/^## /{p = ($2 == v); next} p' CHANGELOG.md`.
+
 ## Packaging constraints
 
 - Keep zero runtime dependencies; the Homebrew formula (`packaging/homebrew/chargestat.rb`) has no `resource` blocks.

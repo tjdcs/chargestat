@@ -18,10 +18,12 @@ Pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml`, which builds the sd
 
 ## Each release
 
+First, add a `## vX.Y.Z — YYYY-MM-DD` section to [CHANGELOG.md](CHANGELOG.md), following the format rules in CLAUDE.md. The release workflow copies it into the GitHub release, and it fails before publishing to PyPI if the section is missing.
+
 ```sh
 uv version --bump patch            # or minor / major; edits pyproject.toml
 uv lock
-git commit -am "Release v$(uv version --short)"
+git commit -am "Release v$(uv version --short)"   # includes the CHANGELOG.md section
 git tag "v$(uv version --short)"
 git push && git push --tags        # triggers PyPI + GitHub release
 ```

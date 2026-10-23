@@ -12,11 +12,19 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Check tag matches project version
         run: test "v$(uv version --short)" = "$GITHUB_REF_NAME"
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          awk -v v="$GITHUB_REF_NAME" '/^## /{p = ($2 == v); next} p' CHANGELOG.md >release-notes.md
+          grep -q '[^[:space:]]' release-notes.md || { echo "::error::CHANGELOG.md has no '## $GITHUB_REF_NAME' section"; exit 1; }
       - run: uv build
       - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-notes
+          path: release-notes.md
 
   pypi:
     needs: build
@@ -42,6 +50,9 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-notes
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --notes-file release-notes.md --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
