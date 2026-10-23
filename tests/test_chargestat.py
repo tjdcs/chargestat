@@ -2,6 +2,7 @@ import json
 import plistlib
 import sqlite3
 import subprocess
+from dataclasses import replace
 
 import pytest
 
@@ -71,7 +72,7 @@ def test_parse_charging():
     assert s.temperature_c == pytest.approx(30.62)
     assert s.updated_s_ago == 12
     assert s.health_pct == pytest.approx(100 * 5318 / 6249)
-    assert s.minutes_at_current_rate == pytest.approx(60 * (5318 - 1141) / 262)
+    assert s.minutes_to_empty_avg is None
     assert "AccumulatedSystemLoad" not in s.raw_telemetry
     assert s.adapter_current_a == pytest.approx(14.042 / 20)
     assert s.load_drain_ma is None
@@ -94,12 +95,13 @@ def test_parse_discharging_wraps_unsigned():
     assert s.adapter.watts is None and s.adapter.pdos == ()
     assert s.flow.battery == -17.0
     assert s.os_minutes_to_empty == 45
-    assert s.minutes_at_current_rate == pytest.approx(60 * 1141 / 1500)
+    assert s.minutes_to_empty_avg is None
+    avg = replace(s, avg_current_ma=-1000.0, avg_window_s=900.0)
+    assert avg.minutes_to_empty_avg == pytest.approx(60 * 1141 / 1000)
     assert s.rate_pct_per_hour == pytest.approx(-100 * 1500 / 5318)
     assert s.adapter_current_a is None
     assert s.load_drain_ma == pytest.approx(-1000 * 17 / 11.439)
     assert s.load_rate_pct_per_hour == pytest.approx(100 * s.load_drain_ma / 5318)
-    assert s.load_minutes_to_empty == pytest.approx(60 * 1141 * 11.439 / 17000)
 
 
 def test_parse_intel_style_capacity():
@@ -112,7 +114,7 @@ def test_parse_intel_style_capacity():
 def test_parse_minimal_entry():
     s = battery.parse({}, now=NOW)
     assert not s.adapter.connected
-    assert s.minutes_at_current_rate is None
+    assert s.minutes_to_empty_avg is None
     assert render(s, Style(False))
 
 
@@ -127,7 +129,7 @@ def test_render_plain():
     assert "100 W" in text
     assert "[20V 5A]" in text
     assert "Charging" in text
-    assert "11h 20m to full" in text
+    assert "11h 20m to full (macOS)" in text and "avg" not in text
     assert "~14.0 W in (~0.70 A @ 20 V)" in text
     assert "Drain" not in text
 
@@ -141,7 +143,26 @@ def test_render_drain_on_battery():
     )
     lines = render(battery.parse(d, now=NOW), Style(False))
     drain = next(line for line in lines if line.startswith("Drain"))
-    assert "~-1486 mA" in drain and "to empty" in drain
+    assert "~-1486 mA" in drain and "to empty" not in drain
+
+
+def test_render_time_on_battery():
+    s = battery.parse(
+        entry(
+            ExternalConnected=False,
+            IsCharging=False,
+            InstantAmperage=unsigned(-1500),
+            AvgTimeToEmpty=45,
+        ),
+        now=NOW,
+    )
+
+    def time_row(s):
+        return next(line for line in render(s, Style(False)) if line.startswith("Time"))
+
+    assert time_row(s) == "Time     45m to empty (macOS)"
+    avg = replace(s, avg_current_ma=-1141.0, avg_window_s=290.0)
+    assert time_row(avg) == "Time     1h 00m to empty (5-min avg) · 45m (macOS)"
 
 
 def test_render_states():
@@ -231,7 +252,7 @@ def test_history_unavailable(tmp_path, monkeypatch):
 
 def test_history_bins_time_weighted():
     def s(t, pct, w):
-        return history.Sample(t, pct, w, True)
+        return history.Sample(t, pct, None, w, True)
 
     # 60 s bins. Bin 0: 50 s at 60 W then a burst of ten 1 s rows at 0 W. Each
     # sample holds until the next row; a 1080 s silence holds only _SAMPLE_S.
@@ -276,3 +297,38 @@ def test_cli_history_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(history, "POWERLOG", str(tmp_path / "missing.PLSQL"))
     assert cli.main(["-H"]) == 2
     assert "cannot read" in capsys.readouterr().err
+
+
+@pytest.fixture
+def unplugged(tmp_path, monkeypatch):
+    """On the adapter until NOW - 300, then 200 s at -500 mA and 100 s at -2000 mA."""
+    path = tmp_path / "Powerlog.PLSQL"
+    rows = [(NOW - 600 + 30 * i, 80.0, 12000, 2000, 1) for i in range(10)]
+    rows += [(NOW - 300, 80.0, 12000, -500, 0), (NOW - 100, 79.0, 12000, -2000, 0)]
+    powerlog(path, rows)
+    monkeypatch.setattr(history, "POWERLOG", str(path))
+    return path
+
+
+def test_recent_current_time_weighted_since_unplug(unplugged):
+    mean, covered = history.recent_current(now=NOW)
+    assert covered == 300
+    assert mean == pytest.approx((-500 * 200 - 2000 * 100) / 300)
+    assert history.recent_current(now=NOW, window_s=100) == (-2000, 100)
+    assert history.recent_current(now=NOW - 260) is None  # 40 s since unplug
+
+
+def test_cli_time_uses_powerlog_average(unplugged, monkeypatch, capsys):
+    d = entry(
+        ExternalConnected=False,
+        IsCharging=False,
+        InstantAmperage=unsigned(-300),
+        AvgTimeToEmpty=45,
+    )
+    monkeypatch.setattr(battery, "read", lambda: battery.parse(d, now=NOW))
+    monkeypatch.setattr(history.time, "time", lambda: NOW)
+    assert cli.main([]) == 0
+    assert "1h 08m to empty (5-min avg) · 45m (macOS)" in capsys.readouterr().out
+    monkeypatch.setattr(history, "POWERLOG", "/nonexistent")
+    assert cli.main([]) == 0
+    assert "Time     45m to empty (macOS)" in capsys.readouterr().out

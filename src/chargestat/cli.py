@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 import time
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from . import __version__, battery, history
 from .plot import render_history
@@ -44,8 +44,21 @@ def _parser() -> argparse.ArgumentParser:
     return p
 
 
+def _with_average(s: battery.Status) -> battery.Status:
+    """Attach the recent mean discharge current from the powerlog, when on battery."""
+    if s.adapter.connected or not s.discharging:
+        return s
+    try:
+        avg = history.recent_current()
+    except history.HistoryUnavailable:
+        return s
+    if avg is None:
+        return s
+    return replace(s, avg_current_ma=avg[0], avg_window_s=avg[1])
+
+
 def _emit(args: argparse.Namespace, st: Style, redraw_lines: int) -> int:
-    s = battery.read()
+    s = _with_average(battery.read())
     if args.json:
         print(json.dumps(s.to_dict()), flush=True)
         return 0

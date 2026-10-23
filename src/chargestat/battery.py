@@ -78,6 +78,10 @@ class Status:
     slow_charging_reason: int
     updated_s_ago: float | None
     raw_telemetry: dict[str, int]
+    # Time-weighted mean gauge current over the recent window on battery, from the
+    # powerlog; filled in by the CLI, since parse() only sees one ioreg snapshot.
+    avg_current_ma: float | None = None
+    avg_window_s: float | None = None
 
     @property
     def discharging(self) -> bool:
@@ -97,16 +101,11 @@ class Status:
         return 100 * self.current_ma / self.full_mah
 
     @property
-    def minutes_at_current_rate(self) -> float | None:
-        """Linear time to full (charging) or empty (discharging) at the present current.
-
-        Ignores the constant-voltage taper near full, so it under-estimates charge
-        time above ~80 %.
-        """
-        if self.charge_mah is None or not self.full_mah or not self.current_ma:
+    def minutes_to_empty_avg(self) -> float | None:
+        """Linear time to empty at the recent mean discharge current."""
+        if self.charge_mah is None or not self.avg_current_ma or self.avg_current_ma >= 0:
             return None
-        remaining = self.full_mah - self.charge_mah if self.current_ma > 0 else self.charge_mah
-        return 60 * remaining / abs(self.current_ma)
+        return 60 * self.charge_mah / -self.avg_current_ma
 
     @property
     def adapter_current_a(self) -> float | None:
@@ -135,16 +134,6 @@ class Status:
             return None
         return 100 * ma / self.full_mah
 
-    @property
-    def load_minutes_to_empty(self) -> float | None:
-        """Linear time to empty at the present system load and pack voltage.
-
-        Pack voltage falls as charge drops, so this over-estimates at low charge.
-        """
-        if (ma := self.load_drain_ma) is None or self.charge_mah is None:
-            return None
-        return 60 * self.charge_mah / -ma
-
     def to_dict(self) -> dict:
         d = asdict(self)
         d["flow"]["wall"] = self.flow.wall
@@ -152,11 +141,10 @@ class Status:
             "discharging": self.discharging,
             "health_pct": self.health_pct,
             "rate_pct_per_hour": self.rate_pct_per_hour,
-            "minutes_at_current_rate": self.minutes_at_current_rate,
+            "minutes_to_empty_avg": self.minutes_to_empty_avg,
             "adapter_current_a": self.adapter_current_a,
             "load_drain_ma": self.load_drain_ma,
             "load_rate_pct_per_hour": self.load_rate_pct_per_hour,
-            "load_minutes_to_empty": self.load_minutes_to_empty,
         }
         return d
 
