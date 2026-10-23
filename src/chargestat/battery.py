@@ -39,7 +39,29 @@ class Adapter:
     description: str | None
     # Source capabilities advertised by the charger: (volts, amps) per PDO.
     pdos: tuple[tuple[float, float], ...] = ()
+    # UsbHvcHvcIndex; 255 (out of range) when no PDO is selected.
     active_pdo: int | None = None
+
+    @property
+    def contract(self) -> tuple[float, float] | None:
+        """Active PD contract (V, A), or None when no PDO is selected."""
+        if self.active_pdo is not None and 0 <= self.active_pdo < len(self.pdos):
+            return self.pdos[self.active_pdo]
+        return None
+
+    @property
+    def bus_voltage_v(self) -> float | None:
+        """VBUS: the contract voltage, else 5 V on a PD charger, else the rated voltage.
+
+        Without an explicit contract a PD source stays at vSafe5V (USB-C
+        current, at most 3 A). ``voltage_v``/``current_a`` are the adapter's
+        rating and do not change when negotiation falls back.
+        """
+        if (c := self.contract) is not None:
+            return c[0]
+        if self.pdos:
+            return 5.0
+        return self.voltage_v
 
 
 @dataclass(frozen=True)
@@ -109,14 +131,14 @@ class Status:
 
     @property
     def adapter_current_a(self) -> float | None:
-        """Estimated adapter bus current: telemetry input power / contract voltage.
+        """Estimated adapter bus current: telemetry input power / bus voltage.
 
         Assumes a fixed PDO holds its voltage; ignores cable drop.
         """
         a, p_in = self.adapter, self.flow.adapter_in
-        if not a.connected or not a.voltage_v or p_in is None:
+        if not a.connected or not (v := a.bus_voltage_v) or p_in is None:
             return None
-        return p_in / a.voltage_v
+        return p_in / v
 
     @property
     def load_drain_ma(self) -> float | None:
@@ -137,6 +159,10 @@ class Status:
     def to_dict(self) -> dict:
         d = asdict(self)
         d["flow"]["wall"] = self.flow.wall
+        d["adapter"] |= {
+            "contract": self.adapter.contract,
+            "bus_voltage_v": self.adapter.bus_voltage_v,
+        }
         d |= {
             "discharging": self.discharging,
             "health_pct": self.health_pct,

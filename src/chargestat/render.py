@@ -83,8 +83,12 @@ def _adapter(s: Status, st: Style) -> str:
     parts = [st.bold(f"{a.watts} W") if a.watts else "connected"]
     if a.description:
         parts.append(a.description)
-    if a.voltage_v and a.current_a:
-        parts.append(st.dim(f"{a.voltage_v:.1f} V × {a.current_a:.2f} A negotiated"))
+    if (c := a.contract) is not None:
+        parts.append(st.dim(f"{c[0]:.1f} V × {c[1]:.2f} A negotiated"))
+    elif a.pdos:
+        parts.append(st.yellow("no PD contract · 5 V USB-C fallback"))
+    elif a.voltage_v and a.current_a:
+        parts.append(st.dim(f"{a.voltage_v:.1f} V × {a.current_a:.2f} A rated"))
     return " · ".join(parts)
 
 
@@ -144,7 +148,7 @@ def _power(s: Status, st: Style) -> str | None:
     if s.adapter.connected and f.adapter_in:
         text = f"~{f.adapter_in:.1f} W in"
         if (amps := s.adapter_current_a) is not None:
-            text += st.dim(f" (~{amps:.2f} A @ {s.adapter.voltage_v:g} V)")
+            text += st.dim(f" (~{amps:.2f} A @ {s.adapter.bus_voltage_v:g} V)")
         text += f" → {f.system_load:.1f} W system"
         if f.battery is not None:
             text += f", {f.battery:+.1f} W battery"

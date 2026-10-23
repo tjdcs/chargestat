@@ -127,11 +127,32 @@ def test_render_plain():
     text = "\n".join(render(battery.parse(entry(), now=NOW), Style(False)))
     assert "\x1b" not in text
     assert "100 W" in text
+    assert "20.0 V × 5.00 A negotiated" in text
     assert "[20V 5A]" in text
     assert "Charging" in text
     assert "11h 20m to full (macOS)" in text and "avg" not in text
     assert "~14.0 W in (~0.70 A @ 20 V)" in text
     assert "Drain" not in text
+
+
+def test_no_pd_contract():
+    det = entry()["AdapterDetails"] | {"UsbHvcHvcIndex": 255}
+    s = battery.parse(entry(AdapterDetails=det), now=NOW)
+    assert s.adapter.contract is None
+    assert s.adapter.bus_voltage_v == 5.0
+    assert s.adapter_current_a == pytest.approx(14.042 / 5)
+    text = "\n".join(render(s, Style(False)))
+    assert "no PD contract" in text and "negotiated" not in text
+    assert "(~2.81 A @ 5 V)" in text
+    assert "[" not in text
+
+
+def test_non_pd_adapter_uses_rating():
+    det = {"Watts": 60, "AdapterVoltage": 16500, "Current": 3650}
+    s = battery.parse(entry(AdapterDetails=det), now=NOW)
+    assert s.adapter.contract is None
+    assert s.adapter.bus_voltage_v == 16.5
+    assert "16.5 V × 3.65 A rated" in "\n".join(render(s, Style(False)))
 
 
 def test_render_drain_on_battery():
@@ -190,6 +211,7 @@ def test_cli_json(monkeypatch, capsys):
     assert cli.main(["--json"]) == 0
     d = json.loads(capsys.readouterr().out)
     assert d["adapter"]["watts"] == 100
+    assert d["adapter"]["contract"] == [20.0, 5.0]
     assert d["flow"]["wall"] == pytest.approx(14.921)
 
 
