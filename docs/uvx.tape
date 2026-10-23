@@ -11,7 +11,7 @@ Enter
 Show
 
 Sleep 600ms
-Type "uvx chargestat"
+Type "uvx chargestat  # uv tmp install"
 Sleep 400ms
 Enter
 Sleep 6s
