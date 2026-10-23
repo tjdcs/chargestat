@@ -164,7 +164,7 @@ def test_render_drain_on_battery():
     )
     lines = render(battery.parse(d, now=NOW), Style(False))
     drain = next(line for line in lines if line.startswith("Drain"))
-    assert "~-1486 mA" in drain and "to empty" not in drain
+    assert "-1486 mA" in drain and "~" not in drain and "to empty" not in drain
 
 
 def test_render_time_on_battery():

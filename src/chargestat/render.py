@@ -115,7 +115,8 @@ def _rate(s: Status, st: Style) -> str:
 def _drain(s: Status, st: Style) -> str | None:
     if (ma := s.load_drain_ma) is None:
         return None
-    text = f"~{ma:+.0f} mA"
+    # No "~": it ran into the minus sign ("~-1095"), and the dim note says it's derived.
+    text = f"{ma:+.0f} mA"
     if (r := s.load_rate_pct_per_hour) is not None:
         text += f" · {r:+.1f} %/h"
     return text + st.dim(" (system load ÷ pack V)")
