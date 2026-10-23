@@ -2,7 +2,7 @@
 
 Output docs/uvx.gif
 
-Set Height 420
+Set Height 680
 Source docs/style.tape
 
 Hide
@@ -14,4 +14,14 @@ Sleep 600ms
 Type "uvx chargestat  # uv tmp install"
 Sleep 400ms
 Enter
-Sleep 6s
+# The download time varies, so wait for the output rather than a fixed sleep.
+Wait+Screen@30s /battery gauge/
+Sleep 5s
+
+Ctrl+L
+Sleep 300ms
+Type "uvx chargestat -H"
+Sleep 400ms
+Enter
+Wait+Screen@30s /powerlog samples/
+Sleep 5s
