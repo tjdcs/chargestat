@@ -2,6 +2,9 @@
 
 Mac power adapter, charge rate, and time to full/empty in the terminal. Read-only, no sudo, no dependencies beyond the Python standard library.
 
+<!-- Absolute URL so the GIF also renders on PyPI. Re-record with: vhs docs/demo.tape -->
+![chargestat showing a charging snapshot, then a 24-hour charge and battery-power history plot](https://raw.githubusercontent.com/tjdcs/chargestat/main/docs/demo.gif)
+
 ```
 Adapter  100 W · pd charger · 20.0 V × 5.00 A negotiated
 PDOs     5V 3A · 9V 3A · 15V 3A · [20V 5A]
