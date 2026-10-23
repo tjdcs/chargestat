@@ -35,7 +35,8 @@ chargestat              # one snapshot
 chargestat -w           # live view, refresh every 2 s (Ctrl-C to stop)
 chargestat -w 5 -n 12   # 12 refreshes, 5 s apart
 chargestat --json       # machine-readable; with -w, one JSON object per line
-chargestat -H           # also list the last 5 adapter/battery switches
+chargestat -H           # plot charge and battery power over the last 24 h
+chargestat -H 6         # ... over the last 6 h (system powerlog keeps ~2-3 days)
 ```
 
 Exit status is 2 when the Mac has no battery.

@@ -51,10 +51,13 @@ def fmt_minutes(m: float | None) -> str:
     return f"{h}h {m:02d}m" if h else f"{m}m"
 
 
+def level_color(pct: float, st: Style):
+    return st.red if pct < 20 else st.yellow if pct < 50 else st.green
+
+
 def _bar(pct: int, st: Style) -> str:
     filled = round(_BAR_WIDTH * max(0, min(pct, 100)) / 100)
-    color = st.red if pct < 20 else st.yellow if pct < 50 else st.green
-    return color("█" * filled) + st.dim("░" * (_BAR_WIDTH - filled))
+    return level_color(pct, st)("█" * filled) + st.dim("░" * (_BAR_WIDTH - filled))
 
 
 def _state(s: Status, st: Style) -> str:
